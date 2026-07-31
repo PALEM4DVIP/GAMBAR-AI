@@ -1,0 +1,26 @@
+<svg width="920" height="260" viewBox="0 0 920 260" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B7CFF"/>
+      <stop offset="50%" stop-color="#37D6C4"/>
+      <stop offset="100%" stop-color="#FF5FB0"/>
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D0D16"/>
+      <stop offset="100%" stop-color="#08080F"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="30" y="30" width="200" height="200" rx="46" fill="url(#bgGrad)"/>
+  <rect x="34" y="34" width="192" height="192" rx="43" fill="none" stroke="#232135" stroke-width="2"/>
+  <text x="130" y="168" text-anchor="middle"
+    font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif"
+    font-weight="bold" font-size="128" fill="url(#grad)">G</text>
+  <circle cx="196" cy="70" r="8" fill="url(#grad)"/>
+
+  <text x="262" y="150" font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif"
+    font-weight="bold" font-size="92" fill="url(#grad)" letter-spacing="2">GAMBAR</text>
+
+  <text x="264" y="188" font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif"
+    font-weight="bold" font-size="20" letter-spacing="6" fill="#6E6C82">GAM BARBAR</text>
+</svg>
