@@ -102,6 +102,16 @@
   .send-btn{width:36px;height:36px;border-radius:10px;background:#1B1930;border:1px solid var(--border-soft);
     cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .send-btn:disabled{opacity:.4;cursor:default;}
+  .mode-toggle{width:36px;height:36px;border-radius:10px;background:transparent;border:1px solid transparent;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:2px;}
+  .mode-toggle:hover{background:#1B1930;}
+  .mode-toggle.active{background:linear-gradient(135deg, rgba(139,124,255,.18), rgba(55,214,196,.14), rgba(255,95,176,.16));
+    border-color:var(--g2);}
+  .bubble-image{padding:6px;background:var(--panel);border:1px solid var(--border-soft);border-radius:14px;max-width:340px;}
+  .bubble-image img{display:block;width:100%;border-radius:10px;}
+  .img-skeleton{width:320px;height:320px;max-width:100%;border-radius:10px;background:linear-gradient(100deg,#171626 30%,#1f1e30 50%,#171626 70%);
+    background-size:200% 100%;animation:shimmer 1.4s infinite;}
+  @keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
   .disclaimer{text-align:center;font-size:11px;color:var(--text-mute);margin-top:8px;}
   .err-bubble{color:#FF9E9E;}
 
@@ -172,12 +182,15 @@
 
     <div class="composer-wrap">
       <div class="composer">
+        <button class="mode-toggle" id="imageModeBtn" type="button" aria-label="Mode buat gambar" title="Mode buat gambar">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 5h16v14H4V5z" stroke="url(#g1)" stroke-width="1.7" stroke-linejoin="round"/><circle cx="9" cy="10" r="1.6" fill="url(#g1)"/><path d="M4 16l5-5 4 4 3-3 4 4" stroke="url(#g1)" stroke-width="1.7" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        </button>
         <textarea id="input" rows="1" placeholder="Kirim pesan ke GAMBAR..."></textarea>
         <button class="send-btn" id="sendBtn" aria-label="Kirim">
           <svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 20l16-8L4 4l0 6.5L15 12 4 13.5 4 20z" fill="url(#g3)"/></svg>
         </button>
       </div>
-      <p class="disclaimer">GAMBAR bisa saja keliru. Selalu cek info penting. Ditenagai Google Gemini API.</p>
+      <p class="disclaimer" id="disclaimerText">GAMBAR bisa saja keliru. Selalu cek info penting. Ditenagai Google Gemini API.</p>
     </div>
   </main>
 </div>
@@ -226,6 +239,7 @@ const VALID_MODELS = ['gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-
 let model = localStorage.getItem(LS_MODEL) || 'gemini-3.5-flash';
 if (!VALID_MODELS.includes(model)) model = 'gemini-3.5-flash';
 let temperature = parseFloat(localStorage.getItem(LS_TEMP) || '0.9');
+let mode = 'chat';
 
 const $ = (sel) => document.querySelector(sel);
 const convList = $('#convList');
@@ -304,10 +318,15 @@ function renderMessages(){
           <button class="sugg-card" data-s="Bantu aku brainstorming caption Instagram">Bantu aku brainstorming caption Instagram</button>
           <button class="sugg-card" data-s="Jelaskan konsep async/await di JavaScript">Jelaskan konsep async/await di JavaScript</button>
           <button class="sugg-card" data-s="Buatkan itinerary 3 hari di Jogja">Buatkan itinerary 3 hari di Jogja</button>
+          <button class="sugg-card" data-s="Kucing astronot naik skateboard, gaya ilustrasi digital" data-mode="image">🖼️ Buatkan gambar kucing astronot naik skateboard</button>
         </div>
       </div>`;
     chatArea.querySelectorAll('.sugg-card').forEach(btn => {
-      btn.addEventListener('click', () => { input.value = btn.dataset.s; input.focus(); });
+      btn.addEventListener('click', () => {
+        input.value = btn.dataset.s;
+        if (btn.dataset.mode === 'image' && mode !== 'image') $('#imageModeBtn').click();
+        input.focus();
+      });
     });
     return;
   }
@@ -315,8 +334,17 @@ function renderMessages(){
     const row = document.createElement('div');
     row.className = 'msg-row row-' + m.role;
     if (m.role === 'assistant'){
-      row.innerHTML = `<div class="avatar"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" fill="url(#g1)"/></svg></div>
-        <div class="bubble assistant" id="${m.id || ''}">${bubbleHtml(m.role, m.content)}</div>`;
+      const inner = m.type === 'image'
+        ? (m.content
+            ? `<div class="bubble-image" id="${m.id || ''}">
+                 <div class="img-skeleton" id="skeleton-${m.id}"></div>
+                 <img src="${m.content}" alt="${escapeHtml(m.prompt || '')}" style="display:none"
+                      onload="this.previousElementSibling.remove(); this.style.display='block';"
+                      onerror="this.previousElementSibling.outerHTML='<p style=\\'padding:10px;font-size:13px;color:#FF9E9E;\\'>Gagal membuat gambar. Coba prompt lain.</p>'; this.remove();" />
+               </div>`
+            : `<div class="bubble-image" id="${m.id || ''}"><div class="img-skeleton"></div></div>`)
+        : `<div class="bubble assistant" id="${m.id || ''}">${bubbleHtml(m.role, m.content)}</div>`;
+      row.innerHTML = `<div class="avatar"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" fill="url(#g1)"/></svg></div>${inner}`;
     } else {
       row.innerHTML = `<div class="bubble user">${bubbleHtml(m.role, m.content)}</div>`;
     }
@@ -331,11 +359,50 @@ function autoResize(){
 }
 input.addEventListener('input', autoResize);
 input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+  if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); handleSend(); }
 });
-sendBtn.addEventListener('click', sendMessage);
+sendBtn.addEventListener('click', handleSend);
 $('#newChatBtn').addEventListener('click', newConversation);
 $('#searchInput').addEventListener('input', renderSidebar);
+
+$('#imageModeBtn').addEventListener('click', () => {
+  mode = mode === 'chat' ? 'image' : 'chat';
+  $('#imageModeBtn').classList.toggle('active', mode === 'image');
+  input.placeholder = mode === 'image'
+    ? 'Deskripsikan gambar yang mau dibuat...'
+    : 'Kirim pesan ke GAMBAR...';
+  $('#disclaimerText').textContent = mode === 'image'
+    ? 'Gambar dibuat otomatis oleh AI, bisa saja tidak sesuai harapan. Ditenagai Pollinations.ai.'
+    : 'GAMBAR bisa saja keliru. Selalu cek info penting. Ditenagai Google Gemini API.';
+});
+
+function handleSend(){
+  if (mode === 'image') generateImage();
+  else sendMessage();
+}
+
+async function generateImage(){
+  const text = input.value.trim();
+  if (!text) return;
+  if (!getActive()) newConversation();
+
+  const conv = getActive();
+  conv.messages.push({ role: 'user', content: text });
+  if (conv.messages.length === 1) conv.title = text.slice(0, 40);
+  input.value = ''; autoResize();
+
+  const assistantId = 'm' + Date.now();
+  conv.messages.push({ role: 'assistant', type: 'image', content: '', prompt: text, id: assistantId });
+  persist(); renderSidebar(); renderMessages();
+
+  const seed = Math.floor(Math.random() * 1000000);
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?width=1024&height=1024&seed=${seed}&nologo=true`;
+
+  const msg = conv.messages.find(m => m.id === assistantId);
+  msg.content = url;
+  persist();
+  renderMessages();
+}
 
 async function sendMessage(){
   const text = input.value.trim();
